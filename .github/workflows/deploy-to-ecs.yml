@@ -3,7 +3,7 @@ name: Deploy FastAPI to ECS
 on:
   push:
     branches:
-      - prod
+      - prod 
 
 jobs:
   deploy:
@@ -37,12 +37,23 @@ jobs:
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
-      - name: Download task definition
+      - name: Download and clean task definition
         run: |
           aws ecs describe-task-definition \
             --task-definition ${{ secrets.ECS_TASK_DEFINITION }} \
             --query taskDefinition \
-            --output json | jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' > task-def.json
+            --output json > task-def-original.json
+
+          cat task-def-original.json | jq 'del(
+              .taskDefinitionArn,
+              .revision,
+              .status,
+              .requiresAttributes,
+              .compatibilities,
+              .registeredAt,
+              .registeredBy,
+              .enableFaultInjection
+          )' > task-def.json
 
       - name: Update task definition with new image
         uses: aws-actions/amazon-ecs-render-task-definition@v1
