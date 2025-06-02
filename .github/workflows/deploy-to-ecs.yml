@@ -3,7 +3,7 @@ name: Deploy FastAPI to ECS
 on:
   push:
     branches:
-      - prod 
+      - prod
 
 jobs:
   deploy:
@@ -41,7 +41,8 @@ jobs:
         run: |
           aws ecs describe-task-definition \
             --task-definition ${{ secrets.ECS_TASK_DEFINITION }} \
-            --query taskDefinition > task-def.json
+            --query taskDefinition \
+            --output json | jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' > task-def.json
 
       - name: Update task definition with new image
         uses: aws-actions/amazon-ecs-render-task-definition@v1
